@@ -1,0 +1,63 @@
+version: "3.6"
+
+volumes:
+  test_shared_data:
+    name: test_shared_data_${ISOLATION_ID}
+
+networks:
+  validators:
+    name: test_validators_${ISOLATION_ID}
+  rest_apis:
+    name: test_rest_apis_${ISOLATION_ID}
+
+services:
+  admin:
+    labels:
+      - "com.sawtooth.ISOLATION_ID=${ISOLATION_ID:-}"
+    build:
+      context: .
+      dockerfile: admin.Dockerfile
+    networks:
+      validators:
+      rest_apis:
+    volumes:
+      - test_shared_data:/shared_data
+    command: |
+      bash -c "
+        rm -rf /shared_data/* &&
+        ls /shared_data &&
+        mkdir -p /shared_data/validators &&
+        mkdir -p /shared_data/rest_apis &&
+        mkdir -p /shared_data/keys &&
+        sawtooth keygen --key-dir /shared_data/keys workload &&
+        sawtooth keygen --key-dir /shared_data/keys settings &&
+        tail -f /dev/null
+      "
+    stop_signal: SIGKILL
+
+  influxdb:
+    image: influxdb:1.7-alpine
+    environment:
+      - INFLUXDB_ADMIN_ENABLED=true
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=admin
+      - INFLUXDB_DB=metrics
+      - INFLUXDB_USER=""
+      - INFLUXDB_USER_PASSWORD=""
+    ports:
+      - "8086:8086"
+    networks:
+      validators:
+      rest_apis:
+    stop_signal: SIGKILL
+
+  grafana:
+    image: grafana/grafana:6.0.0
+    ports:
+      - "4000:3000"
+    depends_on:
+      - influxdb
+    networks:
+      validators:
+      rest_apis:
+    stop_signal: SIGKILL

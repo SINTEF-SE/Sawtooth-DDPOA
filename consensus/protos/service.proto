@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package sawtooth_ddpoa;
+
+service ConsensusRPC {
+  rpc Ping (Empty) returns (ConsensusMessage) {}
+  rpc Message(ConsensusMessage) returns (Empty) {}
+}
+
+enum MessageType {
+  VOTE = 0;
+  VOTE_RESULT = 1;
+  EMPTY_SLOT = 2;
+  BOOTSTRAP = 3;
+  BOOTSTRAP_REQUEST = 4;
+  SYNC_REQUEST = 5;
+}
+
+message Bootstrap {
+  // The current chain head id
+  bytes chain_head_id = 1;
+  uint32 num_blocks = 2;
+  bytes pre_id = 3;
+}
+
+message ConsensusMessage {
+  MessageType type = 1;
+  uint32 timestamp = 2;
+
+  repeated string votes = 3;
+  repeated string result = 4;
+
+  uint32 epoch = 5;
+  Bootstrap bootstrap = 6;
+  string signer = 7;
+}
+
+message Empty {
+  bool _ = 1;
+}

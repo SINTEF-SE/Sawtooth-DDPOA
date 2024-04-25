@@ -1,0 +1,381 @@
+version: "3.6"
+
+volumes:
+  keys:
+
+
+services:
+  validator-0:
+    hostname: validator-0
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_main_validator.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: [ "bash", "start.sh" ]
+    stop_signal: SIGKILL
+
+  validator-1:
+    hostname: validator-1
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    command: [
+        "bash",
+        "/root/start.sh", "1", "2", "3", "0", "4", "5"
+      ]
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+    links:
+      - validator-0
+
+  validator-2:
+    hostname: validator-2
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    command:
+      [
+        "bash",
+        "/root/start.sh",
+        "2", "3", "4", "0", "1", "5"
+      ]
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-1
+    links:
+      - validator-1
+
+  validator-3:
+    hostname: validator-3
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    command:
+      [
+        "bash",
+        "/root/start.sh", "3", "4", "5", "0", "1", "2"
+      ]
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-2
+    links:
+      - validator-2
+
+  validator-4:
+    hostname: validator-4
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    command:
+      [
+        "bash",
+        "/root/start.sh", "4", "1", "5", "2", "3", "0"
+      ]
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-3
+    links:
+      - validator-3
+
+  validator-5:
+    hostname: validator-5
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    command:
+      [
+        "bash",
+        "/root/start.sh", "5", "1", "2", "3", "4", "0"
+      ]
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-4
+    links:
+      - validator-4
+
+  consensus-0:
+    hostname: consensus-0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-0:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+
+  consensus-1:
+    hostname: consensus-1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-1:5050\""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-1
+
+  consensus-2:
+    hostname: consensus-2
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-2:5050\""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-2
+
+  consensus-3:
+    hostname: consensus-3
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-3:5050\""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-3
+
+  consensus-4:
+    hostname: consensus-4
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-4:5050\""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-4
+
+  consensus-5:
+    hostname: consensus-5
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-5:5050\""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-5
+
+  rest-api-0:
+    hostname: rest-api-0
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8008
+    command: sawtooth-rest-api --connect tcp://validator-0:4004 --bind rest-api-0:8008
+    stop_signal: SIGKILL
+
+  rest-api-1:
+    hostname: rest-api-1
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8008
+    command: sawtooth-rest-api --connect tcp://validator-1:4004 --bind rest-api-1:8008
+    stop_signal: SIGKILL
+
+  rest-api-2:
+    hostname: rest-api-2
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8008
+    command: sawtooth-rest-api --connect tcp://validator-2:4004 --bind rest-api-2:8008
+    stop_signal: SIGKILL
+
+  rest-api-3:
+    hostname: rest-api-3
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8008
+    command: sawtooth-rest-api --connect tcp://validator-3:4004 --bind rest-api-3:8008
+    stop_signal: SIGKILL
+
+  rest-api-4:
+    hostname: rest-api-4
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8008
+    command: sawtooth-rest-api --connect tcp://validator-4:4004 --bind rest-api-4:8008
+    stop_signal: SIGKILL
+
+  rest-api-5:
+    hostname: rest-api-5
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8008
+    command: sawtooth-rest-api --connect tcp://validator-5:4004 --bind rest-api-5:8008
+    stop_signal: SIGKILL
+
+  settings-tp-0:
+    hostname: settings-tp-0
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-0:4004
+    stop_signal: SIGKILL
+
+  settings-tp-1:
+    hostname: settings-tp-1
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-1:4004
+    stop_signal: SIGKILL
+
+  settings-tp-2:
+    hostname: settings-tp-2
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-2:4004
+    stop_signal: SIGKILL
+
+  settings-tp-3:
+    hostname: settings-tp-3
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-3:4004
+    stop_signal: SIGKILL
+
+  settings-tp-4:
+    hostname: settings-tp-4
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-4:4004
+    stop_signal: SIGKILL
+
+  settings-tp-5:
+    hostname: settings-tp-5
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-5:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-0:
+    hostname: intkey-tp-0
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    command: intkey-tp-rust -C tcp://validator-0:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-1:
+    hostname: intkey-tp-1
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-1:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-2:
+    hostname: intkey-tp-2
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-2:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-3:
+    hostname: intkey-tp-3
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-3:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-4:
+    hostname: intkey-tp-4
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-4:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-5:
+    hostname: intkey-tp-5
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-5:4004
+    stop_signal: SIGKILL
+
+  #   shell:
+  #     image: hyperledger/sawtooth-shell:nightly
+  #     container_name: sawtooth-shell
+  #     command: |
+  #       bash -c "
+  #         sawtooth keygen
+  #         tail -f /dev/null
+  #       "
+  #     stop_signal: SIGKILL
+
+  intkey:
+    container_name: intkey
+    build:
+      context: ./testing/intkey
+      dockerfile: Dockerfile
+    stop_signal: SIGKILL
+
+  influxdb:
+    image: influxdb:1.7-alpine
+    environment:
+      - INFLUXDB_ADMIN_ENABLED=true
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=admin
+      - INFLUXDB_DB=metrics
+      - INFLUXDB_USER=""
+      - INFLUXDB_USER_PASSWORD=""
+    ports:
+      - "8086:8086"
+    stop_signal: SIGKILL
+
+  grafana:
+    image: grafana/grafana:6.0.0
+    ports:
+      - "4000:3000"
+    depends_on:
+      - influxdb
+    stop_signal: SIGKILL
+
+  intkey-workload:
+    image: hyperledger/sawtooth-intkey-workload
+    expose:
+      - 8008
+    command: "bash -c \"\
+      while true; do curl -s http://rest-api-0:8008/state | grep -q head; if [ $$? -eq 0 ]; then break; fi; sleep 0.5; done; \
+      intkey-workload --rate 25 --display 15 --urls http://rest-api-0:8080,http://rest-api-1:8080,http://rest-api-2:8080,http://rest-api-3:8080,http://rest-api-4:8080,http://rest-api-5:8080,http://rest-api-6:8080,http://rest-api-7:8080,http://rest-api-8:8080,http://rest-api-9:8080,http://rest-api-10:8080,http://rest-api-11:8080,http://rest-api-12:8080,http://rest-api-13:8080,http://rest-api-14:8080,http://rest-api-15:8080,http://rest-api-16:8080,http://rest-api-17:8080,http://rest-api-18:8080,http://rest-api-19:8080,http://rest-api-20:8080,http://rest-api-21:8080,http://rest-api-22:8080,http://rest-api-23:8080,http://rest-api-24:8080,http://rest-api-25:8080,http://rest-api-26:8080,http://rest-api-27:8080,http://rest-api-28:8080,http://rest-api-29:8080,http://rest-api-30:8080,http://rest-api-31:8080 \
+      \""
+    stop_signal: SIGKILL

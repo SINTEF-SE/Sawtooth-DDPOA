@@ -1,0 +1,1 @@
+docker compose stop settings-tp-${1} validator-${1} consensus-${1} intkey-tp-${1} rest-api-${1}

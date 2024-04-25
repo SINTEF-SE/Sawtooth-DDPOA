@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package sawtooth_ddpoa;
+
+message ConsensusData {
+    uint32 timestamp = 1;
+    uint32 epoch = 2;
+    uint32 witnessIdx = 3;
+    repeated string candidates = 4; 
+    string consensus = 5;
+    uint32 num_slots = 6;
+}

@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ddpoa-keys
+spec:
+  template:
+    spec:
+      containers:
+      - name: ddpoa-keys-generator
+        image: hyperledger/sawtooth-shell
+        command:
+          - bash
+        args:
+          - -c
+          - "for i in {0..32}; do sawadm keygen -q ddpoa${i}; done && cd /etc/sawtooth/keys/ && grep '' * | sed 's/\\.//' | sed 's/:/:\ /'"
+      restartPolicy: Never
+  backoffLimit: 4

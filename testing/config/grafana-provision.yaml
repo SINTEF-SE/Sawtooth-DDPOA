@@ -1,0 +1,23 @@
+apiVersion: v1
+data:
+  grafana-provision.yaml: |-
+    apiVersion: 1
+
+    datasources:
+      - name: InfluxDB_v1
+        type: influxdb
+        access: proxy
+        database: metrics
+        user: admin
+        url: http://localhost:8086
+        jsonData:
+          httpMode: GET
+        secureJsonData:
+          password: admin
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2023-01-04T09:41:22Z"
+  name: grafana-provision
+  namespace: default
+  resourceVersion: "1250641"
+  uid: a612b0d7-eaf1-4839-8e7e-fb20cc20a4ab

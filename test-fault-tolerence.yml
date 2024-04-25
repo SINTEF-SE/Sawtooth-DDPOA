@@ -1,0 +1,13 @@
+version: "3.6"
+
+services:
+  test-crash-fault-tolerance:
+    image: sawtooth-test-framework-services:latest
+    build:
+      context: .
+      dockerfile: testing/Dockerfile
+    volumes:
+      - ..:/project/sawtooth-test:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /project/sawtooth-test
+    command:  test_crash_fault_tolerance.sh

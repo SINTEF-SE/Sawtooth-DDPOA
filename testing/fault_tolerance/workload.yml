@@ -1,0 +1,34 @@
+version: "3.6"
+
+# Validators across all compose files join this docker network for inter-node
+# communication
+networks:
+  rest_apis:
+    external:
+      name: test_rest_apis_${TEST_ID}
+
+volumes:
+  test_shared_data:
+    external: true
+    name: test_shared_data_${TEST_ID}
+
+services:
+  workload:
+    image: sawtooth-intkey-workload:${TEST_ID}
+    command: "bash -c \"\
+      export TARGETS=$$(\
+        for target in $$(ls /shared_data/rest_apis -1); do \
+          echo \\\"http://$$target:8008\\\"; \
+        done | tr \\\"\n\\\" \\\",\\\" | sed s\\/,$$\\/\\\n\\/); \
+      echo \\\"-- TARGETS \\\" && echo \\\"TARGETS=$$TARGETS\\\"; \
+      intkey-workload \
+        --key-file /shared_data/keys/workload.priv \
+        --rate ${RATE:-1} \
+        --urls $$TARGETS \
+    \""
+    volumes:
+      - test_shared_data:/shared_data
+    networks:
+      default:
+      rest_apis:
+    stop_signal: SIGKILL

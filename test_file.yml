@@ -1,0 +1,2666 @@
+version: "3.6"
+
+volumes:
+  keys:
+
+services:
+  validator-0:
+    hostname: validator-0
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_main_validator.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh']
+    stop_signal: SIGKILL
+
+  consensus-0:
+    hostname: consensus-0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-0:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-0:
+    hostname: rest-api-0
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-0:4004 --bind rest-api-0:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-0:
+    hostname: settings-tp-0
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-0:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-0:
+    hostname: intkey-tp-0
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-0:4004
+    stop_signal: SIGKILL
+
+  validator-1:
+    hostname: validator-1
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '1', '2', '10', '28', '27', '22', '24', '29', '3', '9', '15']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+
+  consensus-1:
+    hostname: consensus-1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-1:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-1:
+    hostname: rest-api-1
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-1:4004 --bind rest-api-1:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-1:
+    hostname: settings-tp-1
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-1:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-1:
+    hostname: intkey-tp-1
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-1:4004
+    stop_signal: SIGKILL
+
+  validator-2:
+    hostname: validator-2
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '2', '25', '31', '22', '13', '11', '16', '10', '18', '6', '17']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-1
+
+  consensus-2:
+    hostname: consensus-2
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-2:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-2:
+    hostname: rest-api-2
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-2:4004 --bind rest-api-2:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-2:
+    hostname: settings-tp-2
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-2:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-2:
+    hostname: intkey-tp-2
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-2:4004
+    stop_signal: SIGKILL
+
+  validator-3:
+    hostname: validator-3
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '3', '25', '30', '28', '26', '21', '11', '14', '0', '9', '13']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-2
+
+  consensus-3:
+    hostname: consensus-3
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-3:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-3:
+    hostname: rest-api-3
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-3:4004 --bind rest-api-3:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-3:
+    hostname: settings-tp-3
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-3:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-3:
+    hostname: intkey-tp-3
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-3:4004
+    stop_signal: SIGKILL
+
+  validator-4:
+    hostname: validator-4
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '4', '23', '11', '26', '0', '20', '12', '19', '29', '18', '3']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-3
+
+  consensus-4:
+    hostname: consensus-4
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-4:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-4:
+    hostname: rest-api-4
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-4:4004 --bind rest-api-4:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-4:
+    hostname: settings-tp-4
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-4:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-4:
+    hostname: intkey-tp-4
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-4:4004
+    stop_signal: SIGKILL
+
+  validator-5:
+    hostname: validator-5
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '5', '13', '23', '17', '14', '1', '15', '28', '19', '31', '30']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-4
+
+  consensus-5:
+    hostname: consensus-5
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-5:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-5:
+    hostname: rest-api-5
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-5:4004 --bind rest-api-5:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-5:
+    hostname: settings-tp-5
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-5:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-5:
+    hostname: intkey-tp-5
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-5:4004
+    stop_signal: SIGKILL
+
+  validator-6:
+    hostname: validator-6
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '6', '14', '8', '4', '25', '13', '26', '7', '17', '10', '12']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-5
+
+  consensus-6:
+    hostname: consensus-6
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-6:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-6:
+    hostname: rest-api-6
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-6:4004 --bind rest-api-6:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-6:
+    hostname: settings-tp-6
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-6:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-6:
+    hostname: intkey-tp-6
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-6:4004
+    stop_signal: SIGKILL
+
+  validator-7:
+    hostname: validator-7
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '7', '6', '29', '9', '22', '20', '11', '13', '10', '19', '15']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-6
+
+  consensus-7:
+    hostname: consensus-7
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-7:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-7:
+    hostname: rest-api-7
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-7:4004 --bind rest-api-7:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-7:
+    hostname: settings-tp-7
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-7:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-7:
+    hostname: intkey-tp-7
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-7:4004
+    stop_signal: SIGKILL
+
+  validator-8:
+    hostname: validator-8
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '8', '24', '16', '5', '21', '17', '15', '22', '3', '18', '25']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-7
+
+  consensus-8:
+    hostname: consensus-8
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-8:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-8:
+    hostname: rest-api-8
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-8:4004 --bind rest-api-8:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-8:
+    hostname: settings-tp-8
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-8:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-8:
+    hostname: intkey-tp-8
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-8:4004
+    stop_signal: SIGKILL
+
+  validator-9:
+    hostname: validator-9
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '9', '25', '6', '15', '22', '7', '0', '14', '2', '8', '30']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-8
+
+  consensus-9:
+    hostname: consensus-9
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-9:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-9:
+    hostname: rest-api-9
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-9:4004 --bind rest-api-9:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-9:
+    hostname: settings-tp-9
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-9:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-9:
+    hostname: intkey-tp-9
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-9:4004
+    stop_signal: SIGKILL
+
+  validator-10:
+    hostname: validator-10
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '10', '24', '13', '17', '27', '31', '7', '9', '3', '28', '5']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-9
+
+  consensus-10:
+    hostname: consensus-10
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-10:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-10:
+    hostname: rest-api-10
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-10:4004 --bind rest-api-10:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-10:
+    hostname: settings-tp-10
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-10:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-10:
+    hostname: intkey-tp-10
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-10:4004
+    stop_signal: SIGKILL
+
+  validator-11:
+    hostname: validator-11
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '11', '15', '4', '28', '21', '29', '31', '26', '20', '16', '7']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-10
+
+  consensus-11:
+    hostname: consensus-11
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-11:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-11:
+    hostname: rest-api-11
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-11:4004 --bind rest-api-11:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-11:
+    hostname: settings-tp-11
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-11:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-11:
+    hostname: intkey-tp-11
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-11:4004
+    stop_signal: SIGKILL
+
+  validator-12:
+    hostname: validator-12
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '12', '8', '7', '24', '30', '17', '16', '20', '5', '9', '0']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-11
+
+  consensus-12:
+    hostname: consensus-12
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-12:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-12:
+    hostname: rest-api-12
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-12:4004 --bind rest-api-12:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-12:
+    hostname: settings-tp-12
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-12:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-12:
+    hostname: intkey-tp-12
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-12:4004
+    stop_signal: SIGKILL
+
+  validator-13:
+    hostname: validator-13
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '13', '4', '1', '27', '22', '17', '23', '14', '8', '0', '18']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-12
+
+  consensus-13:
+    hostname: consensus-13
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-13:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-13:
+    hostname: rest-api-13
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-13:4004 --bind rest-api-13:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-13:
+    hostname: settings-tp-13
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-13:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-13:
+    hostname: intkey-tp-13
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-13:4004
+    stop_signal: SIGKILL
+
+  validator-14:
+    hostname: validator-14
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '14', '5', '11', '4', '25', '21', '20', '0', '27', '2', '18']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-13
+
+  consensus-14:
+    hostname: consensus-14
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-14:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-14:
+    hostname: rest-api-14
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-14:4004 --bind rest-api-14:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-14:
+    hostname: settings-tp-14
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-14:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-14:
+    hostname: intkey-tp-14
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-14:4004
+    stop_signal: SIGKILL
+
+  validator-15:
+    hostname: validator-15
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '15', '18', '5', '23', '8', '12', '31', '22', '21', '19', '11']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-14
+
+  consensus-15:
+    hostname: consensus-15
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-15:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-15:
+    hostname: rest-api-15
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-15:4004 --bind rest-api-15:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-15:
+    hostname: settings-tp-15
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-15:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-15:
+    hostname: intkey-tp-15
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-15:4004
+    stop_signal: SIGKILL
+
+  validator-16:
+    hostname: validator-16
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '16', '9', '15', '22', '14', '18', '23', '5', '20', '31', '19']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-15
+
+  consensus-16:
+    hostname: consensus-16
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-16:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-16:
+    hostname: rest-api-16
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-16:4004 --bind rest-api-16:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-16:
+    hostname: settings-tp-16
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-16:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-16:
+    hostname: intkey-tp-16
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-16:4004
+    stop_signal: SIGKILL
+
+  validator-17:
+    hostname: validator-17
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '17', '4', '24', '6', '31', '20', '8', '14', '22', '29', '5']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-16
+
+  consensus-17:
+    hostname: consensus-17
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-17:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-17:
+    hostname: rest-api-17
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-17:4004 --bind rest-api-17:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-17:
+    hostname: settings-tp-17
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-17:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-17:
+    hostname: intkey-tp-17
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-17:4004
+    stop_signal: SIGKILL
+
+  validator-18:
+    hostname: validator-18
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '18', '21', '2', '26', '9', '16', '3', '29', '6', '30', '7']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-17
+
+  consensus-18:
+    hostname: consensus-18
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-18:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-18:
+    hostname: rest-api-18
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-18:4004 --bind rest-api-18:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-18:
+    hostname: settings-tp-18
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-18:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-18:
+    hostname: intkey-tp-18
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-18:4004
+    stop_signal: SIGKILL
+
+  validator-19:
+    hostname: validator-19
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '19', '24', '12', '27', '0', '26', '31', '23', '14', '10', '20']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-18
+
+  consensus-19:
+    hostname: consensus-19
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-19:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-19:
+    hostname: rest-api-19
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-19:4004 --bind rest-api-19:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-19:
+    hostname: settings-tp-19
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-19:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-19:
+    hostname: intkey-tp-19
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-19:4004
+    stop_signal: SIGKILL
+
+  validator-20:
+    hostname: validator-20
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '20', '15', '5', '21', '16', '22', '30', '27', '2', '1', '25']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-19
+
+  consensus-20:
+    hostname: consensus-20
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-20:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-20:
+    hostname: rest-api-20
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-20:4004 --bind rest-api-20:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-20:
+    hostname: settings-tp-20
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-20:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-20:
+    hostname: intkey-tp-20
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-20:4004
+    stop_signal: SIGKILL
+
+  validator-21:
+    hostname: validator-21
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '21', '27', '7', '29', '22', '30', '31', '12', '17', '25', '23']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-20
+
+  consensus-21:
+    hostname: consensus-21
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-21:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-21:
+    hostname: rest-api-21
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-21:4004 --bind rest-api-21:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-21:
+    hostname: settings-tp-21
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-21:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-21:
+    hostname: intkey-tp-21
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-21:4004
+    stop_signal: SIGKILL
+
+  validator-22:
+    hostname: validator-22
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '22', '9', '31', '13', '0', '1', '7', '11', '3', '27', '10']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-21
+
+  consensus-22:
+    hostname: consensus-22
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-22:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-22:
+    hostname: rest-api-22
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-22:4004 --bind rest-api-22:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-22:
+    hostname: settings-tp-22
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-22:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-22:
+    hostname: intkey-tp-22
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-22:4004
+    stop_signal: SIGKILL
+
+  validator-23:
+    hostname: validator-23
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '23', '10', '20', '9', '26', '28', '16', '3', '27', '24', '25']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-22
+
+  consensus-23:
+    hostname: consensus-23
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-23:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-23:
+    hostname: rest-api-23
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-23:4004 --bind rest-api-23:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-23:
+    hostname: settings-tp-23
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-23:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-23:
+    hostname: intkey-tp-23
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-23:4004
+    stop_signal: SIGKILL
+
+  validator-24:
+    hostname: validator-24
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '24', '27', '14', '1', '30', '4', '25', '17', '11', '22', '12']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-23
+
+  consensus-24:
+    hostname: consensus-24
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-24:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-24:
+    hostname: rest-api-24
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-24:4004 --bind rest-api-24:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-24:
+    hostname: settings-tp-24
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-24:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-24:
+    hostname: intkey-tp-24
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-24:4004
+    stop_signal: SIGKILL
+
+  validator-25:
+    hostname: validator-25
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '25', '1', '16', '15', '22', '0', '24', '10', '17', '23', '31']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-24
+
+  consensus-25:
+    hostname: consensus-25
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-25:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-25:
+    hostname: rest-api-25
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-25:4004 --bind rest-api-25:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-25:
+    hostname: settings-tp-25
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-25:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-25:
+    hostname: intkey-tp-25
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-25:4004
+    stop_signal: SIGKILL
+
+  validator-26:
+    hostname: validator-26
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '26', '4', '12', '31', '3', '18', '17', '28', '24', '23', '22']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-25
+
+  consensus-26:
+    hostname: consensus-26
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-26:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-26:
+    hostname: rest-api-26
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-26:4004 --bind rest-api-26:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-26:
+    hostname: settings-tp-26
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-26:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-26:
+    hostname: intkey-tp-26
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-26:4004
+    stop_signal: SIGKILL
+
+  validator-27:
+    hostname: validator-27
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '27', '21', '15', '18', '10', '25', '12', '3', '0', '5', '2']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-26
+
+  consensus-27:
+    hostname: consensus-27
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-27:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-27:
+    hostname: rest-api-27
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-27:4004 --bind rest-api-27:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-27:
+    hostname: settings-tp-27
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-27:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-27:
+    hostname: intkey-tp-27
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-27:4004
+    stop_signal: SIGKILL
+
+  validator-28:
+    hostname: validator-28
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '28', '3', '25', '5', '7', '16', '14', '29', '4', '26', '0']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-27
+
+  consensus-28:
+    hostname: consensus-28
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-28:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-28:
+    hostname: rest-api-28
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-28:4004 --bind rest-api-28:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-28:
+    hostname: settings-tp-28
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-28:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-28:
+    hostname: intkey-tp-28
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-28:4004
+    stop_signal: SIGKILL
+
+  validator-29:
+    hostname: validator-29
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '29', '25', '14', '26', '28', '3', '21', '23', '18', '1', '6']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-28
+
+  consensus-29:
+    hostname: consensus-29
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-29:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-29:
+    hostname: rest-api-29
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-29:4004 --bind rest-api-29:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-29:
+    hostname: settings-tp-29
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-29:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-29:
+    hostname: intkey-tp-29
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-29:4004
+    stop_signal: SIGKILL
+
+  validator-30:
+    hostname: validator-30
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '30', '12', '17', '0', '2', '14', '27', '28', '21', '22', '4']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-29
+
+  consensus-30:
+    hostname: consensus-30
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-30:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-30:
+    hostname: rest-api-30
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-30:4004 --bind rest-api-30:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-30:
+    hostname: settings-tp-30
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-30:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-30:
+    hostname: intkey-tp-30
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-30:4004
+    stop_signal: SIGKILL
+
+  validator-31:
+    hostname: validator-31
+    image: hyperledger/sawtooth-validator:chime
+    volumes:
+      - keys:/shared_keys
+      - ./scripts/testing_start.sh:/root/start.sh
+      - ./scripts/create_network_keys.py:/root/create_network_keys.py
+    expose:
+      - 4004
+      - 8800
+      - 5005
+      - 5050
+    working_dir: /root
+    command: ['bash', 'start.sh', '31', '17', '20', '19', '13', '23', '30', '25', '0', '26', '12']
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-30
+
+  consensus-31:
+    hostname: consensus-31
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "bash -c \"python3 main.py -vv --connect tcp://validator-31:5050 \""
+    stop_signal: SIGKILL
+    depends_on:
+      - validator-0
+      - validator-1
+      - validator-2
+      - validator-3
+      - validator-4
+      - validator-5
+      - validator-6
+      - validator-7
+      - validator-8
+      - validator-9
+      - validator-10
+      - validator-11
+      - validator-12
+      - validator-13
+      - validator-14
+      - validator-15
+      - validator-16
+      - validator-17
+      - validator-18
+      - validator-19
+      - validator-20
+      - validator-21
+      - validator-22
+      - validator-23
+      - validator-24
+      - validator-25
+      - validator-26
+      - validator-27
+      - validator-28
+      - validator-29
+      - validator-30
+      - validator-31
+
+  rest-api-31:
+    hostname: rest-api-31
+    image: hyperledger/sawtooth-rest-api:chime
+    expose:
+      - 4004
+      - 8800
+    command: sawtooth-rest-api -v --connect tcp://validator-31:4004 --bind rest-api-31:8008 --opentsdb-url http://influxdb:8086 --opentsdb-db metrics
+    stop_signal: SIGKILL
+
+  settings-tp-31:
+    hostname: settings-tp-31
+    image: hyperledger/sawtooth-settings-tp:chime
+    command: settings-tp -C tcp://validator-31:4004
+    stop_signal: SIGKILL
+
+  intkey-tp-31:
+    hostname: intkey-tp-31
+    image: hyperledger/sawtooth-intkey-tp-rust:latest
+    expose:
+      - 4004
+    command: intkey-tp-rust -C tcp://validator-31:4004
+    stop_signal: SIGKILL
+
+  intkey:
+    container_name: intkey
+    build:
+      context: ./testing/intkey
+      dockerfile: Dockerfile
+    stop_signal: SIGKILL
+
+  influxdb:
+    image: influxdb:1.7-alpine
+    environment:
+      - INFLUXDB_ADMIN_ENABLED=true
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=admin
+      - INFLUXDB_DB=metrics
+      - INFLUXDB_USER=""
+      - INFLUXDB_USER_PASSWORD=""
+    ports:
+      - "8086:8086"
+    stop_signal: SIGKILL
+
+  grafana:
+    image: grafana/grafana:6.0.0
+    ports:
+      - "4000:3000"
+    depends_on:
+      - influxdb
+    stop_signal: SIGKILL
+
+  intkey-workload:
+    image: hyperledger/sawtooth-intkey-workload
+    expose:
+      - 8008
+    command: "bash -c \"\
+      while true; do curl -s http://rest-api-0:8008/state | grep -q head; if [ $$? -eq 0 ]; then break; fi; sleep 0.5; done; \
+      intkey-workload --rate 25 --display 15 --urls http://rest-api-0:8080,http://rest-api-1:8080,http://rest-api-2:8080,http://rest-api-3:8080,http://rest-api-4:8080,http://rest-api-5:8080 \
+      \""
+    stop_signal: SIGKILL
+

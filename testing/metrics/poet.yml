@@ -1,0 +1,3155 @@
+---
+apiVersion: v1
+kind: List
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-0
+    name: sawtooth-0
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-0
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-0
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - if [ ! -f /poet-shared/poet-enclave-measurement ]; then poet enclave measurement
+            >> /poet-shared/poet-enclave-measurement; fi && if [ ! -f /poet-shared/poet-enclave-basename
+            ]; then poet enclave basename >> /poet-shared/poet-enclave-basename; fi
+            && if [ ! -f /poet-shared/simulator_rk_pub.pem ]; then cp /etc/sawtooth/simulator_rk_pub.pem
+            /poet-shared; fi && while [ ! -f /poet-shared/validator-0/keys/validator.priv
+            ]; do echo 'waiting for validator key'; sleep 1; done && cp -a /poet-shared/validator-0/keys
+            /etc/sawtooth && poet registration create -k /etc/sawtooth/keys/validator.priv
+            -o /poet-shared/poet.batch && poet-engine -C tcp://$HOSTNAME:5050 --component
+            tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-0
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - if [ ! -e /etc/sawtooth/keys/validator.priv ]; then sawadm keygen; fi
+            && mkdir -p /poet-shared/validator-0 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-0 && while [ ! -f /poet-shared/poet-enclave-measurement
+            ]; do echo 'waiting for poet-enclave-measurement'; sleep 1; done && while
+            [ ! -f /poet-shared/poet-enclave-basename ]; do echo 'waiting for poet-enclave-basename';
+            sleep 1; done && while [ ! -f /poet-shared/poet.batch ]; do echo 'waiting
+            for poet.batch'; sleep 1; done && if [ ! -e /root/.sawtooth/keys/my_key.priv
+            ]; then sawtooth keygen my_key; fi && cp /poet-shared/poet.batch / &&
+            if [ ! -e config-genesis.batch ]; then sawset genesis -k /root/.sawtooth/keys/my_key.priv
+            -o config-genesis.batch; fi && if [ ! -e config.batch ]; then sawset proposal
+            create -k /root/.sawtooth/keys/my_key.priv sawtooth.consensus.algorithm.name=PoET
+            sawtooth.consensus.algorithm.version=0.1 sawtooth.poet.report_public_key_pem="$(cat
+            /poet-shared/simulator_rk_pub.pem)" sawtooth.poet.valid_enclave_measurements=$(cat
+            /poet-shared/poet-enclave-measurement) sawtooth.poet.valid_enclave_basenames=$(cat
+            /poet-shared/poet-enclave-basename) sawtooth.poet.initial_wait_time=15
+            sawtooth.poet.target_wait_time=15 sawtooth.publisher.max_batches_per_block=200
+            sawtooth.poet.key_block_claim_limit=100000 sawtooth.poet.ztest_minimum_win_count=100000
+            -o config.batch; fi && if [ ! -e /var/lib/sawtooth/genesis.batch ]; then
+            sawadm genesis config-genesis.batch config.batch poet.batch; fi && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 
+            --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800
+            --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-0
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-0
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-0
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-0
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-1
+    name: sawtooth-1
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-1
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-1
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-1/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-1/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-1
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-1 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-1 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-1
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-1
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-1
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-1
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-2
+    name: sawtooth-2
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-2
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-2
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-2/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-2/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-2
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-2 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-2 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-2
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-2
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-2
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-2
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-3
+    name: sawtooth-3
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-3
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-3
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-3/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-3/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-3
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-3 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-3 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-3
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-3
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-3
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-3
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-4
+    name: sawtooth-4
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-4
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-4
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-4/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-4/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-4
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-4 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-4 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-4
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-4
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-4
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-4
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-5
+    name: sawtooth-5
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-5
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-5
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-5/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-5/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-5
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-5 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-5 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-5
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-5
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-5
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-5
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-6
+    name: sawtooth-6
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-6
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-6
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-6/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-6/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-6
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-6 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-6 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-6
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-6
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-6
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-6
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-7
+    name: sawtooth-7
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-7
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-7
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-7/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-7/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-7
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-7 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-7 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-7
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-7
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-7
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-7
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-8
+    name: sawtooth-8
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-8
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-8
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-8/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-8/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-8
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-8 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-8 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-8
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-8
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-8
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-8
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-9
+    name: sawtooth-9
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-9
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-9
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-9/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-9/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-9
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-9 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-9 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-9
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-9
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-9
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-9
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-10
+    name: sawtooth-10
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-10
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-10
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-10/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-10/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-10
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-10 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-10 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-10
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-10
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-10
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-10
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-11
+    name: sawtooth-11
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-11
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-11
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-11/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-11/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-11
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-11 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-11 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-11
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-11
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-11
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-11
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-12
+    name: sawtooth-12
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-12
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-12
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-12/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-12/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-12
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-12 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-12 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-12
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-12
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-12
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-12
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-13
+    name: sawtooth-13
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-13
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-13
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-13/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-13/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-13
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-13 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-13 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-13
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-13
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-13
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-13
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-14
+    name: sawtooth-14
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-14
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-14
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-14/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-14/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-14
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-14 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-14 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-14
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-14
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-14
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-14
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-15
+    name: sawtooth-15
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-15
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-15
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-15/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-15/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-15
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-15 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-15 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_15_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-15
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-15
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-15
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-15
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      name: sawtooth-16
+    name: sawtooth-16
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        name: sawtooth-16
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 1
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: sawtooth-16
+      spec:
+        containers:
+        - args:
+          - -c
+          - intkey-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-intkey-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-intkey-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - while [ ! -f /poet-shared/validator-16/keys/validator.priv ]; do echo 'waiting
+            for validator key'; sleep 1; done && cp -a /poet-shared/validator-16/keys
+            /etc/sawtooth && poet-engine -C tcp://$HOSTNAME:5050 --component tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-engine:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-engine
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-16
+        - args:
+          - -c
+          - poet-validator-registry-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-poet-validator-registry-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-poet-validator-registry-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth-rest-api -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-rest-api:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-rest-api
+          ports:
+          - containerPort: 8008
+            name: api
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - settings-tp -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-settings-tp:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-settings-tp
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawtooth keygen && tail -f /dev/null
+          command:
+          - bash
+          image: hyperledger/sawtooth-shell:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-shell
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - args:
+          - -c
+          - sawadm keygen && mkdir -p /poet-shared/validator-16 || true && cp -a /etc/sawtooth/keys
+            /poet-shared/validator-16 && sawtooth keygen my_key && sawtooth-validator
+            -vv --endpoint tcp://$SAWTOOTH_16_SERVICE_HOST:8800 --bind component:tcp://eth0:4004
+            --bind consensus:tcp://eth0:5050 --bind network:tcp://eth0:8800 --peers
+            tcp://$SAWTOOTH_0_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_1_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_2_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_3_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_4_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_5_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_6_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_7_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_8_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_9_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_10_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_11_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_12_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_13_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_14_SERVICE_HOST:8800 --peers tcp://$SAWTOOTH_15_SERVICE_HOST:8800  --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8006 
+            --opentsdb-db metrics
+          command:
+          - bash
+          image: hyperledger/sawtooth-validator:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-validator
+          ports:
+          - containerPort: 4004
+            name: tp
+            protocol: TCP
+          - containerPort: 5050
+            name: consensus
+            protocol: TCP
+          - containerPort: 8800
+            name: validators
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /poet-shared
+            name: poet-shared-16
+        - args:
+          - -c
+          - xo-tp-python -vv -C tcp://$HOSTNAME:4004
+          command:
+          - bash
+          image: hyperledger/sawtooth-xo-tp-python:nightly
+          imagePullPolicy: IfNotPresent
+          name: sawtooth-xo-tp-python
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: poet-shared-16
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: sawtooth-16
+  spec:
+    internalTrafficPolicy: Cluster
+    ports:
+    - name: "4004"
+      port: 4004
+      protocol: TCP
+      targetPort: 4004
+    - name: "5050"
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+    - name: "8008"
+      port: 8008
+      protocol: TCP
+      targetPort: 8008
+    - name: "8080"
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: "8800"
+      port: 8800
+      protocol: TCP
+      targetPort: 8800
+    selector:
+      name: sawtooth-16
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}

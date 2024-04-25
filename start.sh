@@ -1,0 +1,1 @@
+docker compose start validator-${1} consensus-${1} settings-tp-${1} intkey-tp-${1} rest-api-${1}

@@ -1,0 +1,1297 @@
+---
+apiVersion: v1
+kind: List
+
+items:
+
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-0
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-0
+    template:
+      metadata:
+        labels:
+          name: ddpoa-0
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 5 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            envFrom:
+              - configMapRef:
+                  name: keys-config
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa0priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa0pub > /etc/sawtooth/keys/validator.pub
+                  fi &&
+                  if [ ! -e /root/.sawtooth/keys/my_key.priv ]; then
+                    sawtooth keygen my_key
+                  fi &&
+                  if [ ! -e config-genesis.batch ]; then
+                    sawset genesis -k /root/.sawtooth/keys/my_key.priv -o config-genesis.batch
+                  fi &&
+                  sleep 2 &&
+                  if [ ! -e config.batch ]; then
+                    sawset proposal create \
+                      -k /root/.sawtooth/keys/my_key.priv \
+                      sawtooth.consensus.algorithm.name=ddpoa\
+                      sawtooth.consensus.algorithm.version=0.1 \
+                      sawtooth.consensus.ddpoa.members=["\"$ddpoa0pub\",\"$ddpoa1pub\",\"$ddpoa2pub\",\"$ddpoa3pub\",\"$ddpoa4pub\",\"$ddpoa5pub\",\"$ddpoa6pub\",\"$ddpoa7pub\""] \
+                      sawtooth.consensus.ddpoa.member_ips=[\"$SAWTOOTH_0_SERVICE_HOST\",\"$SAWTOOTH_1_SERVICE_HOST\",\"$SAWTOOTH_2_SERVICE_HOST\",\"$SAWTOOTH_3_SERVICE_HOST\",\"$SAWTOOTH_4_SERVICE_HOST\",\"$SAWTOOTH_5_SERVICE_HOST\",\"$SAWTOOTH_6_SERVICE_HOST\",\"$SAWTOOTH_7_SERVICE_HOST\"]\
+                      sawtooth.publisher.max_batches_per_block=1200 \
+                      sawtooth.consensus.ddpoa.slots=5 \
+                      -o config.batch
+                  fi && \
+                  if [ ! -e /var/lib/sawtooth/genesis.batch ]; then
+                    sawadm genesis config-genesis.batch config.batch
+                  fi &&
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --scheduler parallel \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --peering static\
+                    --maximum-peer-connectivity 10000
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-0
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-0
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-1
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-1
+    template:
+      metadata:
+        labels:
+          name: ddpoa-1
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 10 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            env:
+              - name: ddpoa1priv
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa1priv
+              - name: ddpoa1pub
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa1pub
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa1priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa1pub > /etc/sawtooth/keys/validator.pub 
+                  fi && 
+                  sleep 3 && 
+                  sawtooth keygen my_key && 
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_1_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --scheduler parallel \
+                    --peering static\
+                    --maximum-peer-connectivity 10000 \
+                    --peers \
+                     tcp://$SAWTOOTH_0_SERVICE_HOST:8800 
+                    ,  tcp://$SAWTOOTH_2_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_3_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_4_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_5_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_6_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_7_SERVICE_HOST:8800 \
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-1
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-1
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-2
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-2
+    template:
+      metadata:
+        labels:
+          name: ddpoa-2
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 10 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            env:
+              - name: ddpoa2priv
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa2priv
+              - name: ddpoa2pub
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa2pub
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa2priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa2pub > /etc/sawtooth/keys/validator.pub 
+                  fi && 
+                  sleep 3 && 
+                  sawtooth keygen my_key && 
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_2_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --scheduler parallel \
+                    --peering static\
+                    --maximum-peer-connectivity 10000 \
+                    --peers \
+                     tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_1_SERVICE_HOST:8800 
+                    ,  tcp://$SAWTOOTH_3_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_4_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_5_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_6_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_7_SERVICE_HOST:8800 \
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-2
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-2
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-3
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-3
+    template:
+      metadata:
+        labels:
+          name: ddpoa-3
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 10 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            env:
+              - name: ddpoa3priv
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa3priv
+              - name: ddpoa3pub
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa3pub
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa3priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa3pub > /etc/sawtooth/keys/validator.pub 
+                  fi && 
+                  sleep 3 && 
+                  sawtooth keygen my_key && 
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_3_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --scheduler parallel \
+                    --peering static\
+                    --maximum-peer-connectivity 10000 \
+                    --peers \
+                     tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_1_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_2_SERVICE_HOST:8800 
+                    ,  tcp://$SAWTOOTH_4_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_5_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_6_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_7_SERVICE_HOST:8800 \
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-3
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-3
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-4
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-4
+    template:
+      metadata:
+        labels:
+          name: ddpoa-4
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 10 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            env:
+              - name: ddpoa4priv
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa4priv
+              - name: ddpoa4pub
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa4pub
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa4priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa4pub > /etc/sawtooth/keys/validator.pub 
+                  fi && 
+                  sleep 3 && 
+                  sawtooth keygen my_key && 
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_4_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --scheduler parallel \
+                    --peering static\
+                    --maximum-peer-connectivity 10000 \
+                    --peers \
+                     tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_1_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_2_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_3_SERVICE_HOST:8800 
+                    ,  tcp://$SAWTOOTH_5_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_6_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_7_SERVICE_HOST:8800 \
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-4
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-4
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-5
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-5
+    template:
+      metadata:
+        labels:
+          name: ddpoa-5
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 10 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            env:
+              - name: ddpoa5priv
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa5priv
+              - name: ddpoa5pub
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa5pub
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa5priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa5pub > /etc/sawtooth/keys/validator.pub 
+                  fi && 
+                  sleep 3 && 
+                  sawtooth keygen my_key && 
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_5_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --scheduler parallel \
+                    --peering static\
+                    --maximum-peer-connectivity 10000 \
+                    --peers \
+                     tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_1_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_2_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_3_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_4_SERVICE_HOST:8800 
+                    ,  tcp://$SAWTOOTH_6_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_7_SERVICE_HOST:8800 \
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-5
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-5
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-6
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-6
+    template:
+      metadata:
+        labels:
+          name: ddpoa-6
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 10 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            env:
+              - name: ddpoa6priv
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa6priv
+              - name: ddpoa6pub
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa6pub
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa6priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa6pub > /etc/sawtooth/keys/validator.pub 
+                  fi && 
+                  sleep 3 && 
+                  sawtooth keygen my_key && 
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_6_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --scheduler parallel \
+                    --peering static\
+                    --maximum-peer-connectivity 10000 \
+                    --peers \
+                     tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_1_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_2_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_3_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_4_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_5_SERVICE_HOST:8800 
+                    ,  tcp://$SAWTOOTH_7_SERVICE_HOST:8800 \
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-6
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-6
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-7
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-7
+    template:
+      metadata:
+        labels:
+          name: ddpoa-7
+      spec:
+        containers:
+          - name: sawtooth-intkey-tp-python
+            image: hyperledger/sawtooth-intkey-tp-python:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "intkey-tp-python -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-ddpoa-engine
+            image: ddpoa:latest
+            imagePullPolicy: Never
+            ports:
+              - name: rpc
+                containerPort: 50051
+            workingDir: "/project/consensus/"
+            command:
+              - bash
+            args:
+              - -c
+              - "sleep 10 && python3 main.py -vvv --connect tcp://$HOSTNAME:5050" 
+
+          - name: sawtooth-rest-api
+            image: hyperledger/sawtooth-rest-api:chime
+            ports:
+              - name: api
+                containerPort: 8008
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth-rest-api -vvv -C tcp://$HOSTNAME:4004 -B 0.0.0.0:8008"
+            readinessProbe:
+              httpGet:
+                path: /status
+                port: 8008
+              initialDelaySeconds: 30
+              periodSeconds: 10
+
+          - name: sawtooth-settings-tp
+            image: hyperledger/sawtooth-settings-tp:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "settings-tp -vvv -C tcp://$HOSTNAME:4004"
+
+          - name: sawtooth-shell
+            image: hyperledger/sawtooth-shell:chime
+            command:
+              - bash
+            args:
+              - -c
+              - "sawtooth keygen && tail -f /dev/null"
+
+          - name: sawtooth-validator
+            image: hyperledger/sawtooth-validator:chime
+            ports:
+              - name: tp
+                containerPort: 4004
+              - name: consensus
+                containerPort: 5050
+              - name: validators
+                containerPort: 8800
+            env:
+              - name: ddpoa7priv
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa7priv
+              - name: ddpoa7pub
+                valueFrom:
+                  configMapKeyRef:
+                    name: keys-config
+                    key: ddpoa7pub
+            command:
+              - bash
+            args:
+              - -c
+              - |
+                  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+                    echo $ddpoa7priv > /etc/sawtooth/keys/validator.priv
+                    echo $ddpoa7pub > /etc/sawtooth/keys/validator.pub 
+                  fi && 
+                  sleep 3 && 
+                  sawtooth keygen my_key && 
+                  sawtooth-validator -vvv \
+                    --endpoint tcp://$SAWTOOTH_7_SERVICE_HOST:8800 \
+                    --bind component:tcp://eth0:4004 \
+                    --bind consensus:tcp://eth0:5050 \
+                    --bind network:tcp://eth0:8800 \
+                    --opentsdb-url http://$DDPOA_ADMIN_SERVICE_HOST:8086  \
+                    --opentsdb-db metrics \
+                    --scheduler parallel \
+                    --peering static\
+                    --maximum-peer-connectivity 10000 \
+                    --peers \
+                     tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_1_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_2_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_3_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_4_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_5_SERVICE_HOST:8800 \
+                    ,  tcp://$SAWTOOTH_6_SERVICE_HOST:8800 
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sawtooth-7
+  spec:
+    type: ClusterIP
+    selector:
+      name: ddpoa-7
+    ports:
+      - name: "4004"
+        protocol: TCP
+        port: 4004
+        targetPort: 4004
+      - name: "5050"
+        protocol: TCP
+        port: 5050
+        targetPort: 5050
+      - name: "8008"
+        protocol: TCP
+        port: 8008
+        targetPort: 8008
+      - name: "8080"
+        protocol: TCP
+        port: 8080
+        targetPort: 8080
+      - name: "50051"
+        protocol: TCP
+        port: 50051
+        targetPort: 50051
+      - name: "8800"
+        protocol: TCP
+        port: 8800
+        targetPort: 8800
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ddpoa-admin
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: ddpoa-admin
+    template:
+      metadata:
+        labels:
+          name: ddpoa-admin
+      spec:
+        volumes:
+          - name: influxdb-store 
+            persistentVolumeClaim: 
+              claimName: influxdb-store 
+          - configMap:
+              name: grafana-provision 
+            name: grafana-provision 
+        containers:
+          - name: ddpoa-grafana
+            image: grafana/grafana:6.0.0
+            volumeMounts: 
+              - mountPath: /etc/grafana/provisioning/datasources/grafana-provision.yaml 
+                name: grafana-provision
+                readOnly: True
+                subPath: grafana-provision.yaml
+            ports:
+              - name: grafana
+                containerPort: 3000
+          - name: ddpoa-influxdb
+            image: influxdb:1.7-alpine
+            volumeMounts: 
+              - mountPath: /var/lib/influxdb
+                name: influxdb-store
+            ports:
+              - name: influxdb
+                containerPort: 8086
+            env:
+              - name: INFLUXDB_ADMIN_ENABLED
+                value: "true"
+              - name: INFLUXDB_ADMIN_USER
+                value: "admin"
+              - name: INFLUXDB_ADMIN_PASSWORD
+                value: "admin"
+              - name: INFLUXDB_DB
+                value: metrics
+              - name: INFLUXDB_USER
+                value: "" 
+              - name: INFLUXDB_USER_PASSWORD
+                value: "" 
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ddpoa-admin
+  spec:
+    type: NodePort
+    selector:
+      name: ddpoa-admin
+    ports:
+      - name: grafana
+        protocol: TCP
+        port: 3000
+        targetPort: 3000
+        nodePort: 30000
+      - name: influxdb
+        protocol: TCP
+        port: 8086
+        targetPort: 8086

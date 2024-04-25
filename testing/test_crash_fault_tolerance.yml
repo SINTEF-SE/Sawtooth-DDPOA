@@ -1,0 +1,14 @@
+version: "3.6"
+
+services:
+
+  test-crash-fault-tolerance:
+    image: sawtooth-ddpoa-test
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/project/sawtooth-ddpoa
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /project/sawtooth-ddpoa/testing
+    command: bash faul_tolerance_simple_runner.sh

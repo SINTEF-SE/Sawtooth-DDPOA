@@ -1,0 +1,35 @@
+# Defines the normal Sawtooth services that we have one file for tests to run on
+# These services run from a shared test dockerfile which install the needed sawtooth services from apt
+
+
+version: "3.6"
+
+services:
+  validator:
+    image: sawtooth-validator
+    build:
+      context: .
+      dockerfile: Dockerfile
+  rest-api:
+    image: sawtooth-rest-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  intkey-tp-python:
+    image: sawtooth-intkey-tp-python
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  settings-tp:
+    image: sawtooth-settings-tp
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  workload:
+    image: sawtooth-intkey-workload
+    build:
+      context: .
+      dockerfile: Dockerfile
